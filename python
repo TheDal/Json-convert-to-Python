@@ -1,0 +1,239 @@
+
+# coding: utf-8
+
+# # JSON examples and exercise
+# ****
+# + get familiar with packages for dealing with JSON
+# + study examples with JSON strings and files 
+# + work on exercise to be completed and submitted 
+# ****
+# + reference: http://pandas-docs.github.io/pandas-docs-travis/io.html#json
+# + data source: http://jsonstudio.com/resources/
+# ****
+
+# In[3]:
+
+import pandas as pd
+
+
+# ## imports for Python, Pandas
+
+# In[6]:
+
+import json
+from pandas.io.json import json_normalize
+
+
+# ## JSON example, with string
+# 
+# + demonstrates creation of normalized dataframes (tables) from nested json string
+# + source: http://pandas-docs.github.io/pandas-docs-travis/io.html#normalization
+
+# In[4]:
+
+# define json string
+data = [{'state': 'Florida', 
+         'shortname': 'FL',
+         'info': {'governor': 'Rick Scott'},
+         'counties': [{'name': 'Dade', 'population': 12345},
+                      {'name': 'Broward', 'population': 40000},
+                      {'name': 'Palm Beach', 'population': 60000}]},
+        {'state': 'Ohio',
+         'shortname': 'OH',
+         'info': {'governor': 'John Kasich'},
+         'counties': [{'name': 'Summit', 'population': 1234},
+                      {'name': 'Cuyahoga', 'population': 1337}]}]
+
+
+# In[7]:
+
+# use normalization to create tables from nested element
+json_normalize(data, 'counties')
+
+
+# In[8]:
+
+# further populate tables created from nested element
+json_normalize(data, 'counties', ['state', 'shortname', ['info', 'governor']])
+
+
+# ****
+# ## JSON example, with file
+# 
+# + demonstrates reading in a json file as a string and as a table
+# + uses small sample file containing data about projects funded by the World Bank 
+# + data source: http://jsonstudio.com/resources/
+
+# In[9]:
+
+# load json as string
+json.load((open('data/world_bank_projects_less.json')))
+
+
+# In[10]:
+
+# load as Pandas dataframe
+sample_json_df = pd.read_json('data/world_bank_projects_less.json')
+sample_json_df
+
+
+# ****
+# ## JSON exercise
+# 
+# Using data in file 'data/world_bank_projects.json' and the techniques demonstrated above,
+# 1. Find the 10 countries with most projects
+# 2. Find the top 10 major project themes (using column 'mjtheme_namecode')
+# 3. In 2. above you will notice that some entries have only the code and the name is missing. Create a dataframe with the missing names filled in.
+
+# In[1]:
+
+import pandas as pd
+
+
+# In[2]:
+
+import json
+from pandas.io.json import json_normalize
+
+
+# In[3]:
+
+# define json string
+data = [{'state': 'Florida', 
+         'shortname': 'FL',
+         'info': {'governor': 'Rick Scott'},
+         'counties': [{'name': 'Dade', 'population': 12345},
+                      {'name': 'Broward', 'population': 40000},
+                      {'name': 'Palm Beach', 'population': 60000}]},
+        {'state': 'Ohio',
+         'shortname': 'OH',
+         'info': {'governor': 'John Kasich'},
+         'counties': [{'name': 'Summit', 'population': 1234},
+                      {'name': 'Cuyahoga', 'population': 1337}]}]
+
+
+# In[4]:
+
+# use normalization to create tables from nested element
+json_normalize(data, 'counties')
+
+
+# In[5]:
+
+# further populate tables created from nested element
+json_normalize(data, 'counties', ['state', 'shortname', ['info', 'governor']])
+
+
+# In[9]:
+
+# load json as string
+json.load((open('C:/Users/Frank/Desktop/Springboard/data_wrangling_json/data/world_bank_projects_less.json')))
+
+
+# In[36]:
+
+# load as Pandas dataframe
+sample_json_df = pd.read_json('C:/Users/Frank/Desktop/Springboard/data_wrangling_json/data/world_bank_projects_less.json')
+print sample_json_df.shape
+sample_json_df
+
+
+# In[12]:
+
+#JSON exercise
+#Using data in file 'data/world_bank_projects.json' and the techniques demonstrated above,
+#Find the 10 countries with most projects
+#Find the top 10 major project themes (using column 'mjtheme_namecode')
+#In 2. above you will notice that some entries have only the code and the name is missing. Create a dataframe with the missing names filled in.
+
+
+# In[41]:
+
+# load json as string
+og = json.load((open('C:/Users/Frank/Desktop/Springboard/data_wrangling_json/data/world_bank_projects.json')))
+og
+
+
+# In[39]:
+
+# load as Pandas dataframe
+sample_json_df2 = pd.read_json('C:/Users/Frank/Desktop/Springboard/data_wrangling_json/data/world_bank_projects.json')
+print sample_json_df2.shape
+sample_json_df2
+
+
+# In[20]:
+
+#Find the 10 countries with most projects
+#count tallies
+countries = pd.Series(sample_json_df2.countryshortname).value_counts()
+#countries 
+print countries [0:10]
+
+
+# In[23]:
+
+#Find the top 10 major project themes
+#count tallies
+themes = pd.Series(sample_json_df2.mjtheme_namecode).value_counts()
+themes 
+print themes [0:10]
+
+
+# In[43]:
+
+themes2=json_normalize(og, 'mjtheme_namecode', ['id'])
+themes2
+
+
+# In[44]:
+
+themes2.groupby('id').code.nunique().sort_values(ascending=False).head(10)
+
+
+# In[46]:
+
+print 'Top 10 Major World Bank Project Themes:'
+themes2.name.value_counts().head(10)
+
+
+# In[48]:
+
+codes = themes2.groupby('name').code.max().sort_values(ascending=False)
+codes
+
+
+# In[49]:
+
+codes = codes[codes.index != '']
+codes
+
+
+# In[51]:
+
+codes = pd.DataFrame(codes,columns=['code'])
+codes
+
+
+# In[52]:
+
+codes['combo'] = codes.index
+
+
+# In[53]:
+
+codes2 = codes.set_index(['code'])
+
+
+# In[55]:
+
+print themes2.shape
+new_codes = themes2.merge(codes2,how='outer',left_on=['code'],right_index=True)
+print new_codes.shape
+new_codes
+
+
+# In[ ]:
+
+
+
